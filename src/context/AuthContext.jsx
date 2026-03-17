@@ -312,6 +312,7 @@ const buildConversationsFromChats = (rows, currentUser) => {
 const seedLocalAdmin = () => {
   const users = loadLocalUsers();
   const hasAdmin = users.some((u) => u.role === 'admin');
+  const hasLawyer = users.some((u) => u.role === 'lawyer');
 
   if (!hasAdmin) {
     users.push({
@@ -323,8 +324,22 @@ const seedLocalAdmin = () => {
       created_at: new Date().toISOString(),
       source: 'local',
     });
-    saveLocalUsers(users);
   }
+
+  if (!hasLawyer) {
+    users.push({
+      id: 'local_lawyer_1',
+      name: 'Test Advokat',
+      email: 'lawyer@legallink.uz',
+      password: 'lawyer12345',
+      role: 'lawyer',
+      lawyerId: '1',
+      created_at: new Date().toISOString(),
+      source: 'local',
+    });
+  }
+
+  saveLocalUsers(users);
 };
 
 const rememberUserForLocalFeatures = (user, password = null) => {

@@ -30,6 +30,7 @@ export default function Navbar() {
       { name: 'Chat', path: '/chat/support' },
     ]
     : [];
+  const hideNavbarLogout = user?.role === 'lawyer' && location.pathname.startsWith('/lawyer');
 
   const handleLogout = () => {
     logout();
@@ -81,16 +82,16 @@ export default function Navbar() {
               </select>
             </div>
 
-            {user ? (
+            {user && !hideNavbarLogout ? (
               <Button onClick={handleLogout} variant="outline" className="border-transparent px-4 gap-2 text-red-600 hover:bg-red-50">
                 <LogOut size={16} />
                 Chiqish
               </Button>
-            ) : (
+            ) : !user ? (
               <Link to="/auth">
                 <Button className="btn-primary">Kirish</Button>
               </Link>
-            )}
+            ) : null}
           </div>
 
           <button
@@ -117,7 +118,7 @@ export default function Navbar() {
               </Link>
             ))}
 
-            {user ? (
+            {user && !hideNavbarLogout ? (
               <button
                 type="button"
                 onClick={() => {
@@ -129,14 +130,14 @@ export default function Navbar() {
                 <LogOut size={16} />
                 Chiqish
               </button>
-            ) : (
+            ) : !user ? (
               <Link to="/auth" onClick={() => setIsOpen(false)} className="block">
                 <Button className="w-full btn-primary justify-center gap-2">
                   <UserRound size={16} />
                   Kirish
                 </Button>
               </Link>
-            )}
+            ) : null}
           </div>
         </div>
       )}
