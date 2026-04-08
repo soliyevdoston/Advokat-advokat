@@ -73,16 +73,16 @@ const toNum = (value, fallback = 0) => {
 
 const normalizeLawyer = (raw = {}) => ({
   id: raw.id || raw._id || raw.lawyerId || `lawyer_${Date.now()}_${Math.random().toString(16).slice(2, 6)}`,
-  name: raw.name || 'Noma\'lum advokat',
-  specialization: raw.specialization || 'civil',
-  experience: toNum(raw.experience, 1),
+  name: raw.name || raw.full_name || 'Noma\'lum advokat',
+  specialization: raw.specialization || raw.license_speciality || 'civil',
+  experience: toNum(raw.experience, toNum(raw.experience_years, 1)),
   email: raw.email || '',
   phone: raw.phone || '',
   telegram: raw.telegram || '',
   location: raw.location && typeof raw.location === 'object'
     ? raw.location
-    : { city: raw.city || 'toshkent', district: raw.district || '' },
-  license: raw.license || '',
+    : { city: raw.city || 'toshkent', district: raw.district || raw.current_address || '' },
+  license: raw.license || raw.license_number || '',
   workHours: raw.workHours || '09:00 - 18:00',
   image: raw.image || DEFAULT_AVATAR,
   languages: Array.isArray(raw.languages)
@@ -111,13 +111,11 @@ const toTimestamp = (value) => {
 
 const LOCAL_APPLICATIONS_KEY = 'legallink_user_applications_v1';
 const LOCAL_SUBSCRIPTIONS_KEY = 'legallink_user_subscriptions_v1';
-const LAWYER_ENDPOINTS = ['/advokat/lawyers', '/advokat/list', '/advokat', '/lawyers', '/api/lawyers'];
+const LAWYER_ENDPOINTS = ['/admin/user/pending'];
 const HEALTH_ENDPOINTS = ['/health', '/ping'];
-const NEWS_ENDPOINTS = ['/list/news', '/list', '/list%20/news', '/list%20', '/news', '/api/news'];
-const CONSTITUTION_SECTIONS_ENDPOINTS = ['/user/constitutsiya/sections', '/constitution/sections', '/api/constitution/sections'];
-const CONSTITUTION_ARTICLES_ENDPOINTS = ['/user/constitutsiya', '/constitution', '/api/constitution'];
-const ADMIN_APPLICATION_ENDPOINTS = ['/admin/ariza/requests', '/applications', '/api/applications', '/documents', '/api/documents', '/requests', '/api/requests'];
-const ADMIN_SUBSCRIPTION_ENDPOINTS = ['/subscriptions', '/api/subscriptions', '/users/subscriptions', '/billing/subscriptions'];
+const NEWS_ENDPOINTS = ['/list%20/stats', '/list /stats', '/list/stats'];
+const CONSTITUTION_ARTICLES_ENDPOINTS = ['/user/constitutsiya'];
+const ADMIN_APPLICATION_ENDPOINTS = ['/admin/ariza/requests'];
 
 const readJSON = (key, fallback) => {
   try {
@@ -284,22 +282,13 @@ export default function AdminDashboard() {
       };
 
       setAuditLogs(writeAuditLog(entry));
-
-      try {
-        await requestAny(
-          ['/audit-logs', '/api/audit-logs', '/admin/audit-logs', '/logs/audit'],
-          { method: 'POST', body: entry, auth: true }
-        );
-      } catch {
-        // Backend endpoint mavjud bo'lmasa local audit ishlashda davom etadi.
-      }
     },
-    [requestAny, user?.email]
+    [user?.email]
   );
 
   const loadLawyers = useCallback(async () => {
-    const data = await requestAny(LAWYER_ENDPOINTS, { method: 'GET', auth: false });
-    const raw = Array.isArray(data) ? data : (data.lawyers || data.data || data.items || []);
+    const data = await requestAny(LAWYER_ENDPOINTS, { method: 'GET', auth: true });
+    const raw = Array.isArray(data) ? data : (data.pending || data.lawyers || data.data || data.items || []);
     setLawyers(toArray(raw).map(normalizeLawyer));
   }, [requestAny]);
 
@@ -316,62 +305,42 @@ export default function AdminDashboard() {
     setContentLoading(true);
 
     try {
-      const [sectionsRes, articlesRes, newsRes, docsRes] = await Promise.allSettled([
-        requestAny(CONSTITUTION_SECTIONS_ENDPOINTS, { method: 'GET', auth: false }),
+      const [articlesRes, newsRes] = await Promise.allSettled([
         requestAny(CONSTITUTION_ARTICLES_ENDPOINTS, { method: 'GET', auth: false }),
         requestAny(NEWS_ENDPOINTS, { method: 'GET', auth: false }),
-        requestAny(['/documents', '/api/documents'], { method: 'GET', auth: true }),
       ]);
 
-      const constitutionSections = sectionsRes.status === 'fulfilled'
-        ? mapCount(sectionsRes.value, ['sections', 'items'])
-        : 0;
-
       const constitutionArticles = articlesRes.status === 'fulfilled'
-        ? mapCount(articlesRes.value, ['articles', 'items'])
+        ? mapCount(articlesRes.value, ['clauses', 'articles', 'items'])
         : 0;
 
       const newsCount = newsRes.status === 'fulfilled'
-        ? mapCount(newsRes.value, ['news', 'items'])
+        ? 0
         : 0;
 
-      const documentsCount = docsRes.status === 'fulfilled'
-        ? mapCount(docsRes.value, ['documents', 'items'])
-        : 0;
-
-      setContentStats({ constitutionSections, constitutionArticles, newsCount, documentsCount });
+      setContentStats({ constitutionSections: 0, constitutionArticles, newsCount, documentsCount: 0 });
     } finally {
       setContentLoading(false);
     }
-  }, [apiFetch, requestAny]);
+  }, [requestAny]);
 
   const loadOpsPanels = useCallback(async () => {
     setOpsLoading(true);
     setOpsError('');
 
     try {
-      const [applicationsRes, subscriptionsRes, settingsRes] = await Promise.allSettled([
+      const [applicationsRes] = await Promise.allSettled([
         requestAny(
           ADMIN_APPLICATION_ENDPOINTS,
           { method: 'GET', auth: true }
         ),
-        requestAny(
-          ADMIN_SUBSCRIPTION_ENDPOINTS,
-          { method: 'GET', auth: true }
-        ),
-        requestAny(['/settings', '/api/settings', '/config', '/api/config'], { method: 'GET', auth: true }),
       ]);
 
       const applicationsPayload = applicationsRes.status === 'fulfilled' ? applicationsRes.value : [];
-      const subscriptionsPayload = subscriptionsRes.status === 'fulfilled' ? subscriptionsRes.value : [];
-      const settingsPayload = settingsRes.status === 'fulfilled' ? settingsRes.value : null;
 
       const remoteApplications = toArray(applicationsPayload).length
         ? toArray(applicationsPayload)
-        : (applicationsPayload?.applications || applicationsPayload?.documents || applicationsPayload?.items || applicationsPayload?.data || []);
-      const remoteSubscriptions = toArray(subscriptionsPayload).length
-        ? toArray(subscriptionsPayload)
-        : (subscriptionsPayload?.subscriptions || subscriptionsPayload?.items || subscriptionsPayload?.data || []);
+        : (applicationsPayload?.applications || applicationsPayload?.requests || applicationsPayload?.documents || applicationsPayload?.items || applicationsPayload?.data || []);
 
       const localApplications = readJSON(LOCAL_APPLICATIONS_KEY, []);
       const localSubscriptions = readJSON(LOCAL_SUBSCRIPTIONS_KEY, []);
@@ -391,21 +360,17 @@ export default function AdminDashboard() {
         };
       });
 
-      const mergedSubscriptions = remoteSubscriptions.length ? remoteSubscriptions : localSubscriptions;
+      const mergedSubscriptions = localSubscriptions;
 
       setApplications(mergedApplications);
       setSubscriptions(mergedSubscriptions);
-      setPlatformSettings(settingsPayload);
+      setPlatformSettings(null);
 
       writeJSON(LOCAL_APPLICATIONS_KEY, mergedApplications);
       writeJSON(LOCAL_SUBSCRIPTIONS_KEY, mergedSubscriptions);
 
-      if (
-        applicationsRes.status === 'rejected' &&
-        subscriptionsRes.status === 'rejected' &&
-        settingsRes.status === 'rejected'
-      ) {
-        setOpsError('Ariza, obuna yoki sozlama endpointlari topilmadi.');
+      if (applicationsRes.status === 'rejected') {
+        setOpsError('Ariza endpointidan maʼlumot olib bo‘lmadi.');
       }
     } finally {
       setOpsLoading(false);
@@ -417,12 +382,29 @@ export default function AdminDashboard() {
       setLoading(true);
       setError('');
 
-      const [users, chats] = await Promise.all([getAllUsers(), listSupportConversations()]);
-      setUsersList(Array.isArray(users) ? users : []);
-      setConversations(Array.isArray(chats) ? chats : []);
+      const [usersRes, chatsRes] = await Promise.allSettled([
+        getAllUsers(),
+        listSupportConversations(),
+      ]);
 
-      await Promise.all([loadLawyers(), loadContentStats(), loadOpsPanels(), loadServerStatus()]);
+      if (usersRes.status === 'fulfilled') {
+        setUsersList(Array.isArray(usersRes.value) ? usersRes.value : []);
+      } else {
+        setUsersList([]);
+      }
+
+      if (chatsRes.status === 'fulfilled') {
+        setConversations(Array.isArray(chatsRes.value) ? chatsRes.value : []);
+      } else {
+        setConversations([]);
+      }
+
+      await Promise.allSettled([loadLawyers(), loadContentStats(), loadOpsPanels(), loadServerStatus()]);
       setLastSyncedAt(new Date());
+
+      if (usersRes.status === 'rejected' && chatsRes.status === 'rejected') {
+        throw new Error("Foydalanuvchi va chat ma'lumotlari olinmadi");
+      }
     } catch (err) {
       setError(safeError(err, "Ma'lumotlarni yuklashda xatolik yuz berdi"));
     } finally {
@@ -504,21 +486,29 @@ export default function AdminDashboard() {
 
     try {
       const payload = buildLawyerPayload();
-      const data = await requestAny(LAWYER_ENDPOINTS, {
-        method: 'POST',
-        body: payload,
-        auth: true,
+      const registerRes = await createLawyerAccount({
+        email: lawyerForm.email,
+        password: String(lawyerForm.loginPassword || '').trim(),
+        name: lawyerForm.name,
+        phone: lawyerForm.phone,
+        specialization: lawyerForm.specialization,
+        city: lawyerForm.city,
+        workPlace: lawyerForm.workHours || '09:00 - 18:00',
+        currentAddress: `${lawyerForm.city} ${lawyerForm.district || ''}`.trim(),
+        experience: lawyerForm.experience,
+        licenseSeries: 'AA',
+        licenseNumber: lawyerForm.license || '',
+        licenseDate: new Date().toISOString().slice(0, 10),
+        licenseSpeciality: lawyerForm.specialization,
+        achievements: lawyerForm.bio,
       });
-
-      const created = normalizeLawyer(data.lawyer || data.data || data);
+      const created = normalizeLawyer({
+        ...(registerRes?.user || {}),
+        ...payload,
+        id: registerRes?.user?.id || registerRes?.id || `pending_${Date.now()}`,
+      });
       setLawyers((prev) => [created, ...prev.filter((item) => String(item.id) !== String(created.id))]);
       setLawyerForm(EMPTY_LAWYER_FORM);
-      await createLawyerAccount({
-        email: created.email || lawyerForm.email,
-        password: String(lawyerForm.loginPassword || '').trim(),
-        name: created.name || lawyerForm.name,
-        lawyerId: created.id || null,
-      });
       setLawyerSuccess('Advokat va uning kabinet login/paroli muvaffaqiyatli yaratildi');
       await pushAuditLog({
         action: 'lawyer_created',
@@ -540,17 +530,17 @@ export default function AdminDashboard() {
     setLawyerSuccess('');
 
     try {
-      await requestAny([`/advokat/lawyers/${id}`, `/advokat/${id}`, `/lawyers/${id}`, `/api/lawyers/${id}`], {
-        method: 'DELETE',
+      await requestAny([`/admin/user/reject/${id}`], {
+        method: 'POST',
         auth: true,
       });
       await pushAuditLog({
         action: 'lawyer_deleted',
         target: String(id),
-        detail: 'Advokat o\'chirildi',
+        detail: 'Advokat so‘rovi rad etildi',
       });
       setLawyers((prev) => prev.filter((item) => String(item.id) !== String(id)));
-      setLawyerSuccess('Advokat o\'chirildi');
+      setLawyerSuccess('Advokat so‘rovi rad etildi');
     } catch (err) {
       setLawyerError(safeError(err, 'Advokatni o\'chirishda xatolik yuz berdi'));
     }

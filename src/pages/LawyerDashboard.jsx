@@ -22,6 +22,8 @@ import '../styles/panels-minimal.css';
 const LOCAL_APPLICATIONS_KEY = 'legallink_user_applications_v1';
 const LAWYER_AVAILABILITY_KEY = 'legallink_lawyer_availability_v1';
 const LAWYER_NOTES_KEY = 'legallink_lawyer_notes_v1';
+const LAWYER_REQUEST_ENDPOINTS = ['/advokat/ariza/my-requests', '/user/ariza/my'];
+const LAWYER_REQUEST_STATUS_ENDPOINTS = ['/advokat/chats/request/status', '/advokat/ariza/request/accept'];
 
 const readJSON = (key, fallback) => {
   try {
@@ -72,9 +74,24 @@ const isUrgentApplication = (item) => {
   return urgentWord || olderThan3Days;
 };
 
+const normalizeLawyerApplication = (raw = {}) => ({
+  id: raw.id || raw._id || raw.request_id || raw.requestId || `lawyer_app_${Date.now()}`,
+  title: raw.title || raw.subject || 'Ariza',
+  subject: raw.subject || raw.title || 'Ariza',
+  description: raw.description || raw.content || raw.text || '',
+  text: raw.text || raw.content || raw.description || '',
+  status: raw.status || 'assigned',
+  assignedLawyerId: raw.assignedLawyerId || raw.lawyer_id || raw.lawyerId || null,
+  assignedLawyerEmail: raw.assignedLawyerEmail || raw.lawyer_email || raw.lawyerEmail || '',
+  assignedLawyerName: raw.assignedLawyerName || raw.lawyer_name || raw.lawyerName || '',
+  userEmail: raw.userEmail || raw.clientEmail || raw.user_email || '',
+  clientEmail: raw.clientEmail || raw.userEmail || raw.user_email || '',
+  createdAt: raw.createdAt || raw.created_at || new Date().toISOString(),
+});
+
 export default function LawyerDashboard() {
   const navigate = useNavigate();
-  const { user, logout, listSupportConversations, safeError } = useAuth();
+  const { user, logout, listSupportConversations, safeError, apiBase, authToken } = useAuth();
 
   const lawyerKey = useMemo(() => getLawyerKey(user), [user]);
   const [activeSection, setActiveSection] = useState('overview');
@@ -95,6 +112,34 @@ export default function LawyerDashboard() {
 
   const notesKey = useMemo(() => `${lawyerKey || 'lawyer'}::notes`, [lawyerKey]);
 
+  const apiRequest = useCallback(async (paths, { method = 'GET', body } = {}) => {
+    let lastError = null;
+    for (const path of paths) {
+      try {
+        const response = await fetch(`${apiBase}${path}`, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+          },
+          body: body ? JSON.stringify(body) : undefined,
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          const err = new Error(data?.message || data?.error || `Server xatosi: ${response.status}`);
+          err.status = response.status;
+          throw err;
+        }
+        return data;
+      } catch (err) {
+        lastError = err;
+        if (err?.status === 404 || err?.status === 405) continue;
+        throw err;
+      }
+    }
+    throw lastError || new Error('Endpoint topilmadi');
+  }, [apiBase, authToken]);
+
   const loadData = useCallback(async () => {
     if (!lawyerKey) return;
 
@@ -102,13 +147,21 @@ export default function LawyerDashboard() {
     setError('');
 
     try {
-      const allApplications = readJSON(LOCAL_APPLICATIONS_KEY, []);
-      const myApplications = allApplications.filter((item) => {
-        const assignedId = String(item?.assignedLawyerId || item?.lawyerId || '').trim();
-        const assignedEmail = String(item?.assignedLawyerEmail || item?.lawyerEmail || '').trim().toLowerCase();
-        return assignedId === lawyerKey || assignedEmail === String(user?.email || '').toLowerCase();
-      });
+      const requestsPayload = await apiRequest(LAWYER_REQUEST_ENDPOINTS, { method: 'GET' });
+      const remoteRequestsRaw = Array.isArray(requestsPayload)
+        ? requestsPayload
+        : requestsPayload?.requests || requestsPayload?.applications || requestsPayload?.items || requestsPayload?.data || [];
+      const remoteRequests = remoteRequestsRaw.map(normalizeLawyerApplication);
+      const allApplications = remoteRequests.length ? remoteRequests : readJSON(LOCAL_APPLICATIONS_KEY, []);
+      const myApplications = allApplications
+        .filter((item) => {
+          const assignedId = String(item?.assignedLawyerId || item?.lawyerId || '').trim();
+          const assignedEmail = String(item?.assignedLawyerEmail || item?.lawyerEmail || '').trim().toLowerCase();
+          return assignedId === lawyerKey || assignedEmail === String(user?.email || '').toLowerCase();
+        })
+        .map(normalizeLawyerApplication);
       setApplications(myApplications);
+      writeJSON(LOCAL_APPLICATIONS_KEY, allApplications);
 
       const availabilityMap = readJSON(LAWYER_AVAILABILITY_KEY, {});
       setSlots(Array.isArray(availabilityMap[lawyerKey]) ? availabilityMap[lawyerKey] : []);
@@ -123,7 +176,7 @@ export default function LawyerDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [lawyerKey, listSupportConversations, notesKey, safeError, user?.email]);
+  }, [apiRequest, lawyerKey, listSupportConversations, notesKey, safeError, user?.email]);
 
   useEffect(() => {
     loadData();
@@ -188,7 +241,19 @@ export default function LawyerDashboard() {
     writeJSON(LAWYER_NOTES_KEY, allNotes);
   };
 
-  const updateApplicationStatus = (id, status) => {
+  const updateApplicationStatus = async (id, status) => {
+    try {
+      await apiRequest(LAWYER_REQUEST_STATUS_ENDPOINTS, {
+        method: 'PUT',
+        body: {
+          request_id: Number(id),
+          status,
+        },
+      });
+    } catch {
+      // backend bu endpointni qabul qilmasa local state davom etadi
+    }
+
     const all = readJSON(LOCAL_APPLICATIONS_KEY, []);
     const next = all.map((item) => {
       if (String(item.id || item._id) !== String(id)) return item;
