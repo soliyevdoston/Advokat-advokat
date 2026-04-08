@@ -1,104 +1,110 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Facebook, Twitter, Instagram } from 'lucide-react';
+import { Facebook, Instagram, Mail, MapPin, Phone, Twitter } from 'lucide-react';
 import Logo from '../ui/Logo';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-[var(--color-surface-900)] text-slate-300 pt-20 pb-10 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-          {/* Brand Info */}
-          <div className="space-y-6">
-            <Link to="/" className="flex items-center gap-2 text-white group">
-              <span className="w-10 h-10 rounded-xl bg-white/10 inline-flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+    <footer className="bg-[var(--color-surface-950)] text-slate-300 border-t border-slate-800 mt-auto">
+      <div className="section-wrap py-14 md:py-16">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <Link to="/lawyer" className="inline-flex items-center gap-2.5 text-white">
+              <span className="w-10 h-10 rounded-xl bg-white/10 inline-flex items-center justify-center">
                 <Logo className="w-7 h-7" color="text-white" />
               </span>
-              <span className="text-2xl font-serif font-bold">LegalLink</span>
+              <span className="text-2xl font-serif font-bold">Lawyer Portal</span>
             </Link>
-            <p className="text-slate-400 leading-relaxed">
-              Advokat kabineti: arizalar, bo‘sh vaqtlar va mijozlar bilan chatlar bir joyda.
+            <p className="mt-4 text-sm text-slate-400 leading-relaxed">
+              Advokatlar uchun yagona ish maydoni: mijoz arizalari, jadval va suhbatlar real vaqt rejimida boshqariladi.
             </p>
-            <div className="flex gap-4">
-              <SocialIcon href="https://www.instagram.com/legallinkuz/" label="Instagram" icon={<Instagram size={20} />} />
-              <SocialIcon href="https://www.facebook.com/legallink.uz" label="Facebook" icon={<Facebook size={20} />} />
-              <SocialIcon href="https://x.com/etonemativich?s=21" label="X" icon={<Twitter size={20} />} />
+            <div className="mt-5 flex items-center gap-2">
+              <SocialLink href="https://www.instagram.com/legallinkuz/" icon={<Instagram size={16} />} label="Instagram" />
+              <SocialLink href="https://www.facebook.com/legallink.uz" icon={<Facebook size={16} />} label="Facebook" />
+              <SocialLink href="https://x.com/etonemativich?s=21" icon={<Twitter size={16} />} label="X" />
             </div>
           </div>
 
-          {/* Quick Links */}
           <div>
-            <h3 className="text-white font-serif font-semibold text-lg mb-6">Tezkor bo‘limlar</h3>
-            <ul className="space-y-4">
-              <FooterLink to="/lawyer">Advokat kabineti</FooterLink>
-              <FooterLink to="/chat/support">Chat markazi</FooterLink>
-              <FooterLink to="/auth">Kirish</FooterLink>
-            </ul>
+            <FooterTitle>Portal bo‘limlari</FooterTitle>
+            <FooterList>
+              <FooterItem to="/lawyer">Kabinet</FooterItem>
+              <FooterItem to="/chat/support">Suhbatlar</FooterItem>
+              <FooterItem to="/about">Biz haqimizda</FooterItem>
+              <FooterItem to="/auth">Kirish</FooterItem>
+            </FooterList>
           </div>
 
-          {/* Services */}
           <div>
-            <h3 className="text-white font-serif font-semibold text-lg mb-6">Ish oqimi</h3>
-            <ul className="space-y-4">
-              <li>1. Admin arizani advokatga biriktiradi</li>
-              <li>2. Advokat bo‘sh vaqtlarni belgilaydi</li>
-              <li>3. Chat admin ruxsatidan keyin ochiladi</li>
-            </ul>
+            <FooterTitle>Ish oqimi</FooterTitle>
+            <FooterList>
+              <li>1. Mijoz arizasi biriktiriladi</li>
+              <li>2. Advokat hujjat va jadvalni tayyorlaydi</li>
+              <li>3. Suhbat va yakuniy javob tizimda saqlanadi</li>
+            </FooterList>
           </div>
 
-          {/* Contact */}
           <div>
-            <h3 className="text-white font-serif font-semibold text-lg mb-6">Aloqa</h3>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <MapPin className="text-[var(--color-secondary)] shrink-0" size={20} />
-                <span>Toshkent sh., Amir Temur ko‘chasi, 108</span>
+            <FooterTitle>Aloqa</FooterTitle>
+            <ul className="space-y-3 text-sm text-slate-400">
+              <li className="flex items-start gap-2.5">
+                <MapPin size={16} className="text-[var(--color-secondary)] mt-0.5" />
+                <span>Toshkent shahri, Amir Temur ko‘chasi 108</span>
               </li>
-              <li className="flex items-center gap-3">
-                <Phone className="text-[var(--color-secondary)] shrink-0" size={20} />
-                <a href="tel:1144" className="hover:text-white transition-colors">Call-markaz: 1144</a>
+              <li className="flex items-center gap-2.5">
+                <Phone size={16} className="text-[var(--color-secondary)]" />
+                <a href="tel:1144" className="hover:text-white">1144</a>
               </li>
-              <li className="flex items-center gap-3">
-                <Mail className="text-[var(--color-secondary)] shrink-0" size={20} />
-                <a href="mailto:info@advokat.uz" className="hover:text-white transition-colors">info@advokat.uz</a>
+              <li className="flex items-center gap-2.5">
+                <Mail size={16} className="text-[var(--color-secondary)]" />
+                <a href="mailto:info@advokat.uz" className="hover:text-white">info@advokat.uz</a>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-slate-500">
-            © {currentYear} LegalLink Lawyer Portal
-          </p>
+        <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <p>© {currentYear} LegalLink Lawyer Portal</p>
+          <div className="flex items-center gap-4">
+            <Link to="/auth" className="hover:text-slate-300">Kirish</Link>
+            <Link to="/lawyer" className="hover:text-slate-300">Kabinet</Link>
+          </div>
         </div>
       </div>
     </footer>
   );
 }
 
-function SocialIcon({ icon, href, label }) {
+function FooterTitle({ children }) {
+  return <h3 className="text-white text-base font-semibold mb-4">{children}</h3>;
+}
+
+function FooterList({ children }) {
+  return <ul className="space-y-2.5 text-sm text-slate-400">{children}</ul>;
+}
+
+function FooterItem({ children, to }) {
+  return (
+    <li>
+      <Link to={to} className="hover:text-white">
+        {children}
+      </Link>
+    </li>
+  );
+}
+
+function SocialLink({ href, icon, label }) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-[var(--color-primary)] hover:text-white transition-all duration-300 text-slate-400 hover:-translate-y-1"
+      className="w-8 h-8 rounded-lg inline-flex items-center justify-center bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
     >
       {icon}
     </a>
-  );
-}
-
-function FooterLink({ children, to }) {
-  return (
-    <li>
-      <Link to={to} className="hover:text-[var(--color-secondary)] transition-colors flex items-center gap-2 group">
-        <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-secondary)] transform scale-0 group-hover:scale-100 transition-transform"></span>
-        <span className="group-hover:translate-x-1 transition-transform">{children}</span>
-      </Link>
-    </li>
   );
 }

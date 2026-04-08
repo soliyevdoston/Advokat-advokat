@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { buildApiUrl } from '../../config/appConfig';
 
-const NEWS_ENDPOINTS = ['/news', '/api/news'];
+const NEWS_ENDPOINTS = ['/list/news', '/list', '/list%20/news', '/list%20', '/news', '/api/news'];
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=1200';
 
 const parsePayload = (payload) => {

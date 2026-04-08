@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import SupportChat from '../components/chat/SupportChat';
+import '../styles/panels-minimal.css';
 
 const LOCAL_APPLICATIONS_KEY = 'legallink_user_applications_v1';
 const LAWYER_AVAILABILITY_KEY = 'legallink_lawyer_availability_v1';
@@ -282,10 +283,10 @@ export default function LawyerDashboard() {
   }
 
   return (
-    <div className="min-h-screen pt-28 pb-20 bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="lawyer-dashboard-shell lawyer-panel-minimal min-h-screen pt-28 pb-20 bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+      <div className="section-wrap">
         <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6">
-          <aside className="lg:sticky lg:top-28 self-start bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm p-4">
+          <aside className="lg:sticky lg:top-28 self-start surface-card rounded-3xl p-4">
             <div className="px-2 pb-4 border-b border-slate-100 dark:border-slate-700">
               <p className="text-xs uppercase tracking-wide text-slate-500">Advokat panel</p>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">{user?.name || 'Advokat'}</h2>
@@ -622,7 +623,7 @@ function Card({ title, icon, children }) {
   const Icon = icon || ShieldCheck;
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 p-5">
+    <div className="surface-card rounded-3xl p-5">
       <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 inline-flex items-center gap-2">
         <Icon size={18} className="text-[var(--color-primary)] dark:text-blue-400" />
         {title}
@@ -634,7 +635,7 @@ function Card({ title, icon, children }) {
 
 function StatBox({ icon, title, value }) {
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-3">
+    <div className="surface-card rounded-2xl p-4 flex items-center gap-3">
       <div className="w-11 h-11 rounded-xl bg-[var(--color-primary)] text-white flex items-center justify-center">
         {React.createElement(icon, { size: 20 })}
       </div>

@@ -6,6 +6,9 @@ import { useLanguage } from '../context/LanguageContext';
 import { buildApiUrl } from '../config/appConfig';
 const MotionH1 = motion.h1;
 const MotionDiv = motion.div;
+const TOKEN_KEY = 'advokat_auth_token';
+const API_CONSTITUTION_ENDPOINTS = ['/user/constitutsiya', '/api/constitution', '/constitution'];
+const API_CONSTITUTION_SECTIONS_ENDPOINTS = ['/user/constitutsiya/sections', '/constitution/sections', '/api/constitution/sections'];
 
 const toArray = (value) => (Array.isArray(value) ? value : []);
 
@@ -52,7 +55,12 @@ const parseArticles = (data, sectionsPayload = null) => {
 };
 
 async function fetchJson(url) {
-  const response = await fetch(url);
+  const token = localStorage.getItem(TOKEN_KEY);
+  const response = await fetch(url, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
@@ -62,6 +70,22 @@ async function fetchJson(url) {
   }
 
   return data;
+}
+
+async function fetchJsonAny(paths) {
+  let lastError = null;
+
+  for (const path of paths) {
+    try {
+      return await fetchJson(buildApiUrl(path));
+    } catch (err) {
+      lastError = err;
+      if (err?.status === 404 || err?.status === 405) continue;
+      throw err;
+    }
+  }
+
+  throw lastError || new Error('Endpoint topilmadi');
 }
 
 const ConstitutionPage = () => {
@@ -81,8 +105,8 @@ const ConstitutionPage = () => {
 
     try {
       const [sectionsData, articlesData] = await Promise.all([
-        fetchJson(buildApiUrl('/constitution/sections')),
-        fetchJson(buildApiUrl('/constitution')),
+        fetchJsonAny(API_CONSTITUTION_SECTIONS_ENDPOINTS),
+        fetchJsonAny(API_CONSTITUTION_ENDPOINTS),
       ]);
 
       const mappedSections = parseSections(sectionsData);

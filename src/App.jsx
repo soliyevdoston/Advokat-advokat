@@ -8,6 +8,7 @@ import PrivateRoute from './components/utils/PrivateRoute';
 import ChatPage from './pages/Chat';
 import Auth from './pages/Auth';
 import LawyerDashboard from './pages/LawyerDashboard';
+import About from './pages/About';
 import { useAuth } from './context/AuthContext';
 
 import { LanguageProvider } from './context/LanguageContext';
@@ -42,6 +43,7 @@ function AppContent() {
           <Route path="/" element={<LawyerLanding />} />
 
           <Route path="/auth" element={<Auth />} />
+          <Route path="/about" element={<About />} />
 
           <Route
             path="/lawyer"

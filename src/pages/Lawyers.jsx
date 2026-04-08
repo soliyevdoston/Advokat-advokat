@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { buildApiUrl } from '../config/appConfig';
 const MotionDiv = motion.div;
 
-const LAWYER_ENDPOINTS = ['/lawyers', '/api/lawyers'];
+const LAWYER_ENDPOINTS = ['/advokat/lawyers', '/advokat/list', '/advokat', '/lawyers', '/api/lawyers'];
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800';
 
 const toNumber = (value, fallback = 0) => {
@@ -162,6 +162,16 @@ const Lawyers = () => {
     });
   }, [filters, lawyers, t]);
 
+  const topRatedCount = useMemo(
+    () => lawyers.filter((lawyer) => Number(lawyer.rating || 0) >= 4.8).length,
+    [lawyers]
+  );
+
+  const contactReadyCount = useMemo(
+    () => lawyers.filter((lawyer) => lawyer.phone || lawyer.telegram || lawyer.email).length,
+    [lawyers]
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[var(--color-surface-900)] pt-24 pb-20 transition-colors duration-300">
       <div className="md:hidden fixed bottom-6 right-6 z-50">
@@ -181,7 +191,7 @@ const Lawyers = () => {
         />
       )}
 
-      <div className="container mx-auto px-4">
+      <div className="section-wrap">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white mb-4">
             {t('lawyers_page.title')}
@@ -189,6 +199,12 @@ const Lawyers = () => {
           <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto text-lg">
             {t('lawyers_page.subtitle')}
           </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4 mb-6">
+          <SummaryCard label="Ro‘yxatdagi advokatlar" value={lawyers.length} />
+          <SummaryCard label="Yuqori reytingli mutaxassislar" value={topRatedCount} />
+          <SummaryCard label="Aloqaga tayyor profillar" value={contactReadyCount} />
         </div>
 
         {apiError && !isLoading && (
@@ -257,7 +273,7 @@ const Lawyers = () => {
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
                       key={lawyer.id}
-                      className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl hover:border-blue-100 dark:hover:border-blue-700 transition-all group cursor-pointer"
+                      className="surface-card rounded-2xl p-6 group cursor-pointer"
                       onClick={() => setSelectedLawyer(lawyer)}
                     >
                       <div className="flex gap-4 md:gap-6">
@@ -373,3 +389,12 @@ const Lawyers = () => {
 };
 
 export default Lawyers;
+
+function SummaryCard({ label, value }) {
+  return (
+    <div className="surface-card rounded-2xl p-4">
+      <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{value}</p>
+    </div>
+  );
+}

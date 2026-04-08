@@ -3,7 +3,7 @@ import { AlertCircle, ArrowLeft, ArrowRight, Calendar, Clock, Loader2, Search } 
 import { Link, useParams } from 'react-router-dom';
 import { buildApiUrl } from '../config/appConfig';
 
-const NEWS_ENDPOINTS = ['/news', '/api/news'];
+const NEWS_ENDPOINTS = ['/list/news', '/list', '/list%20/news', '/list%20', '/news', '/api/news'];
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=2000';
 
 const FALLBACK_NEWS = [

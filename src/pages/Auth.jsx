@@ -5,11 +5,16 @@ import Button from '../components/ui/Button';
 import Logo from '../components/ui/Logo';
 import { useAuth } from '../context/AuthContext';
 
+const FALLBACK_LAWYER_EMAIL = 'lawyer@legallink.uz';
+const FALLBACK_LAWYER_PASSWORD = 'lawyer12345';
+
 export default function Auth() {
   const navigate = useNavigate();
   const { login, localFallbackEnabled } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -18,12 +23,8 @@ export default function Auth() {
     setError('');
     setLoading(true);
 
-    const form = new FormData(event.target);
-    const email = String(form.get('email') || '').trim();
-    const password = String(form.get('password') || '').trim();
-
     try {
-      const session = await login(email, password);
+      const session = await login(String(email || '').trim(), String(password || '').trim());
       if (session?.user?.role !== 'lawyer') {
         setError('Bu portal faqat advokat akkauntlari uchun.');
         return;
@@ -67,6 +68,8 @@ export default function Auth() {
                 required
                 autoComplete="email"
                 placeholder="lawyer@mail.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               />
             </div>
@@ -82,6 +85,8 @@ export default function Auth() {
                 required
                 autoComplete="current-password"
                 placeholder="••••••••"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               />
             </div>
@@ -97,8 +102,21 @@ export default function Auth() {
         </form>
 
         {localFallbackEnabled && (
-          <div className="mt-5 text-xs text-amber-700 dark:text-amber-300 bg-amber-50/70 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl px-3 py-2">
-            Local fallback yoqilgan: backend bo‘lmasa local akkauntlar bilan kirish mumkin.
+          <div className="mt-5 rounded-xl border border-blue-200/70 dark:border-blue-800/60 bg-blue-50/70 dark:bg-blue-900/20 px-4 py-3 text-xs text-blue-800 dark:text-blue-300">
+            <p className="font-bold mb-1">Frontend fallback advokat</p>
+            <p>Email: <span className="font-semibold">{FALLBACK_LAWYER_EMAIL}</span></p>
+            <p>Parol: <span className="font-semibold">{FALLBACK_LAWYER_PASSWORD}</span></p>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail(FALLBACK_LAWYER_EMAIL);
+                setPassword(FALLBACK_LAWYER_PASSWORD);
+                setError('');
+              }}
+              className="mt-2 inline-flex items-center rounded-lg border border-blue-300/70 dark:border-blue-700 px-2.5 py-1 font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100/70 dark:hover:bg-blue-900/30 transition-colors"
+            >
+              Loginni avtomatik to‘ldirish
+            </button>
           </div>
         )}
       </div>
