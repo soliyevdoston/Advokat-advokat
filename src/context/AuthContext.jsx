@@ -166,25 +166,28 @@ const normalizeMessage = (msg = {}) => ({
   createdAt: msg.createdAt || msg.created_at || new Date().toISOString(),
 });
 
-const CHAT_LIST_ENDPOINTS = ['/user/chats', '/admin/chats/chats'];
-const CHAT_SEND_ENDPOINTS = ['/user/chats/send', '/admin/chats/chats/send'];
+const CHAT_LIST_ENDPOINTS = ['/advokat/chats/my-requests', '/user/chats'];
+const CHAT_SEND_ENDPOINTS = ['/advokat/chats/send', '/user/chats/send'];
 const CHAT_BY_ID_ENDPOINTS = (conversationId) => {
   const id = encodeURIComponent(String(conversationId || '').trim());
   if (!id) return CHAT_LIST_ENDPOINTS;
   return [
+    `/advokat/chats/${id}`,
     `/user/chats/${id}`,
-    `/admin/chats/chats/${id}`,
     ...CHAT_LIST_ENDPOINTS,
   ];
 };
-const LOGIN_ENDPOINTS = ['/user/auth/login', '/advokat/auth/login', '/admin/auth/login'];
+const LOGIN_ENDPOINTS = ['/advokat/auth/login', '/user/auth/login', '/admin/auth/login'];
 const SEND_CODE_ENDPOINTS = ['/user/auth/send-code'];
 const VERIFY_CODE_ENDPOINTS = ['/user/auth/verify-code'];
-const REGISTER_ENDPOINTS = ['/user/auth/register'];
+const REGISTER_ENDPOINTS = ['/advokat/auth/register', '/user/auth/register'];
 const LOGOUT_ENDPOINTS = ['/user/auth/logout'];
 const CREATE_ADMIN_ENDPOINTS = ['/admin/auth/make'];
 const CREATE_LAWYER_ENDPOINTS = ['/advokat/auth/register'];
 const USERS_ENDPOINTS = ['/admin/user/users/search?q=@'];
+
+const ADVOKAT_ARIZA_ENDPOINTS = ['/advokat/ariza/my-requests'];
+const ADVOKAT_MY_REQUESTS_ENDPOINTS = ['/advokat/chats/my-requests'];
 
 const normalizeParty = (value) => {
   const raw = String(value ?? '').trim();
@@ -1105,6 +1108,43 @@ export const AuthProvider = ({ children }) => {
     return conversations[idx];
   };
 
+  const getAdvokatAriza = async () => {
+    if (!authToken) throw new Error('Avval tizimga kiring');
+    return apiRequestAny(ADVOKAT_ARIZA_ENDPOINTS, { method: 'GET', token: authToken });
+  };
+
+  const acceptAriza = async (arizaId) => {
+    if (!authToken) throw new Error('Avval tizimga kiring');
+    return apiRequest('/advokat/ariza/accept', {
+      method: 'POST', token: authToken, body: { request_id: arizaId },
+    });
+  };
+
+  const declineAriza = async (arizaId) => {
+    if (!authToken) throw new Error('Avval tizimga kiring');
+    return apiRequest('/advokat/ariza/decline', {
+      method: 'POST', token: authToken, body: { request_id: arizaId },
+    });
+  };
+
+  const updateChatRequestStatus = async (requestId, status) => {
+    if (!authToken) throw new Error('Avval tizimga kiring');
+    return apiRequest('/advokat/chats/request/status', {
+      method: 'POST', token: authToken, body: { request_id: requestId, status },
+    });
+  };
+
+  const getMyChatRequests = async () => {
+    if (!authToken) throw new Error('Avval tizimga kiring');
+    return apiRequestAny(ADVOKAT_MY_REQUESTS_ENDPOINTS, { method: 'GET', token: authToken });
+  };
+
+  const getChatByRequestId = async (requestId) => {
+    if (!authToken) throw new Error('Avval tizimga kiring');
+    const id = encodeURIComponent(String(requestId || '').trim());
+    return apiRequest(`/advokat/chats/${id}`, { method: 'GET', token: authToken });
+  };
+
   const isAuthenticated = Boolean(authToken && user);
   const isAdmin = user?.role === 'admin';
   const isLawyer = user?.role === 'lawyer';
@@ -1133,6 +1173,12 @@ export const AuthProvider = ({ children }) => {
     sendSupportMessage,
     setSupportConversationApproval,
     setSupportConversationStatus,
+    getAdvokatAriza,
+    acceptAriza,
+    declineAriza,
+    updateChatRequestStatus,
+    getMyChatRequests,
+    getChatByRequestId,
     safeError,
   };
 
